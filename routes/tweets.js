@@ -4,30 +4,35 @@ import Tweets from "../models/tweetsModel.js";
 import { connectDB } from "../lib/db.js"; // Ensure the DB connection is correct
 import authenticateToken from "./baseauth.js";
 import multer from "multer";
-import { fileURLToPath } from "url";
-import path from "path";
+import cloudinary from "../lib/cloudinary.js";
+// import { fileURLToPath } from "url";
+// import path from "path";
 
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const TweetCrud = express.Router();
 
 // Connect to DB before any request
 connectDB();
 
-// Configure storage to save files in "public/uploads"
-const storage = multer.diskStorage({
-    destination: path.join(__dirname, "../../public/uploads"),
-    // Save inside public/uploads
-    filename: (req, file, cb) => {
-        const sanitizedFilename = file.originalname.replace(/\s+/g, "_"); // Replace spaces with underscores
-        cb(null, sanitizedFilename);
-    }
-}
-);
-
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+const uploadToCloudinary = async (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "uploads" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+};
+
 
 // ✅ GET all tweets
 TweetCrud.get("/tweetall", async (req, res) => {
@@ -58,19 +63,25 @@ TweetCrud.post("/tweetinsert", async (req, res) => {
 TweetCrud.post("/loggedtweet", authenticateToken, upload.single("media"), async (req, res) => {
     try {
         const { tweetContent, username, Name, profileImage } = req.body;
-        // console.log(tweetContent)
-        const userId = req.user.userId;
-        // console.log(req.user) // Extract user ID from token
-        const mediaUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const userId = req.user.userId; // Extract user ID from token
+
+        // Upload media to Cloudinary if present
+        let mediaUrl = null;
+        if (req.file) {
+            mediaUrl = await uploadToCloudinary(req.file.buffer);
+        }
+
+        // Ensure there's either text content or media
         if (!tweetContent && !mediaUrl) {
             return res.status(400).json({ message: "Tweet content or media is required" });
         }
 
+        // Create and save the new tweet
         const newTweet = new Tweets({
             user_id: userId,
-            username: username,
-            Name: Name,
-            profileImage: profileImage,
+            username,
+            Name,
+            profileImage,
             content: tweetContent,
             image: mediaUrl,
             likes: 0,
@@ -87,6 +98,7 @@ TweetCrud.post("/loggedtweet", authenticateToken, upload.single("media"), async 
         res.status(500).json({ message: "Server error" });
     }
 });
+
 TweetCrud.post("/likes", authenticateToken, async (req, res) => {
     try {
         const userId =req.user.userId;  // Ensure it's an ObjectId

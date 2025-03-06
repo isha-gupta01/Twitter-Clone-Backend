@@ -30,7 +30,7 @@ app.use('/usercrud',UserCrud)
 
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded form data
-app.use("/uploads", express.static(path.join(__dirname, "../../public/uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads"))); 
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = 4000;
