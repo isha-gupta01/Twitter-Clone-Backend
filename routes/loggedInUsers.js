@@ -59,5 +59,67 @@ loggedUser.get("/profile/:userId", async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
+loggedUser.put('/follow/:userId',async (req, res) => {
+    try {
+        const userIdToFollow = req.params.userId; // The user being followed
+        const followerId = req.body.followerId; // The user following (from localStorage on frontend)
+        // console.log(followerId);
+        if (!followerId) {
+            return res.status(400).json({ message: "Follower ID is required" });
+        }
+
+        const user = await UserInfo.findById(userIdToFollow);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if already followed
+        if (user.followers.includes(followerId)) {
+            return res.status(400).json({ message: "Already following this user" });
+        }
+
+        // Add follower
+        user.followers.push(followerId);
+        await user.save();
+
+        res.status(200).json({ message: "Followed successfully", user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+
+loggedUser.put('/unfollow/:userId', async (req, res) => {
+    try {
+        const userIdToUnfollow = req.params.userId; // The user being unfollowed
+        const followerId = req.body.followerId; // The user who wants to unfollow
+
+        if (!followerId) {
+            return res.status(400).json({ message: "Follower ID is required" });
+        }
+
+        const user = await UserInfo.findById(userIdToUnfollow);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if the user is following
+        if (!user.followers.includes(followerId)) {
+            return res.status(400).json({ message: "You are not following this user" });
+        }
+
+        // Remove follower
+        user.followers = user.followers.filter(id=>id.toString() !== followerId);
+        await user.save();
+
+        res.status(200).json({ message: "Unfollowed successfully", user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+
 
 export default loggedUser;
