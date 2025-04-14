@@ -59,66 +59,112 @@ loggedUser.get("/profile/:userId", async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
-loggedUser.put('/follow/:userId',async (req, res) => {
+loggedUser.get("/profile/searched/:username", async (req, res) => {
     try {
-        const userIdToFollow = req.params.userId; // The user being followed
-        const followerId = req.body.followerId; // The user following (from localStorage on frontend)
-        // console.log(followerId);
-        if (!followerId) {
-            return res.status(400).json({ message: "Follower ID is required" });
-        }
+        const { username } = req.params;
+        console.log("🔍 Username from params:", username);
 
-        const user = await UserInfo.findById(userIdToFollow);
+        const user = await UserInfo.findOne({ username });
+        console.log("📦 User found:", user);
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Check if already followed
-        if (user.followers.includes(followerId)) {
-            return res.status(400).json({ message: "Already following this user" });
-        }
+        res.json(user);
+    } catch (error) {
+        console.error("❌ Server error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
-        // Add follower
-        user.followers.push(followerId);
-        await user.save();
 
-        res.status(200).json({ message: "Followed successfully", user });
+loggedUser.put('/follow/:userId',authenticateToken, async (req, res) => {
+    try {
+      const userIdToFollow = req.params.userId;
+      const followerId = req.user.userId;
+  
+      if (!followerId) {
+        return res.status(400).json({ message: "Follower ID is required" });
+      }
+  
+      const userToFollow = await UserInfo.findById(userIdToFollow);
+      const followerUser = await UserInfo.findById(followerId);
+  
+      if (!userToFollow || !followerUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      if (userToFollow.followers.includes(followerId)) {
+        return res.status(400).json({ message: "Already following this user" });
+      }
+  
+      // Add follower to user's followers
+      userToFollow.followers.push(followerId);
+      await userToFollow.save();
+  
+      // Add user to follower's following list
+      followerUser.following.push(userIdToFollow);
+      await followerUser.save();
+  
+      res.status(200).json({ message: "Followed successfully" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+
+loggedUser.get("/profile/:userId/followings",authenticateToken, async (req, res) => {
+    try {
+        const user = await UserInfo.findOne({ _id: req.params.userId })
+            .populate("following", "-password") // populate user data except password
+        
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.status(200).json({ followings: user.following });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error" });
     }
 });
 
-
-loggedUser.put('/unfollow/:userId', async (req, res) => {
+loggedUser.put('/unfollow/:userId',authenticateToken, async (req, res) => {
     try {
-        const userIdToUnfollow = req.params.userId; // The user being unfollowed
-        const followerId = req.body.followerId; // The user who wants to unfollow
-
-        if (!followerId) {
-            return res.status(400).json({ message: "Follower ID is required" });
-        }
-
-        const user = await UserInfo.findById(userIdToUnfollow);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // Check if the user is following
-        if (!user.followers.includes(followerId)) {
-            return res.status(400).json({ message: "You are not following this user" });
-        }
-
-        // Remove follower
-        user.followers = user.followers.filter(id=>id.toString() !== followerId);
-        await user.save();
-
-        res.status(200).json({ message: "Unfollowed successfully", user });
+      const userIdToUnfollow = req.params.userId;
+      const followerId = req.user.userId;
+  
+      if (!followerId) {
+        return res.status(400).json({ message: "Follower ID is required" });
+      }
+  
+      const userToUnfollow = await UserInfo.findById(userIdToUnfollow);
+      const followerUser = await UserInfo.findById(followerId);
+  
+      if (!userToUnfollow || !followerUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      if (!userToUnfollow.followers.includes(followerId)) {
+        return res.status(400).json({ message: "You are not following this user" });
+      }
+  
+      // Remove follower from user's followers
+      userToUnfollow.followers = userToUnfollow.followers.filter(id => id.toString() !== followerId);
+      await userToUnfollow.save();
+  
+      // Remove user from follower's following list
+      followerUser.following = followerUser.following.filter(id => id.toString() !== userIdToUnfollow);
+      await followerUser.save();
+  
+      res.status(200).json({ message: "Unfollowed successfully" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
     }
-});
+  });
+  
+
 
 
 

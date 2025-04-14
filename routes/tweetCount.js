@@ -19,6 +19,20 @@ tweetcount.get("/me", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+// Get tweet count for searched user
+tweetcount.get("/count/searched/:username", async (req, res) => {
+  try {
+    const {username} = req.params; // Extracted from JWT token
+    // console.log(userId)
+    // Count tweets for the logged-in user
+    const tweetCount = await Tweets.countDocuments({ username });
+    // console.log(tweetCount)
+    res.json({username, totalTweets: tweetCount });
+  } catch (error) {
+    console.error("Error fetching tweet count:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 tweetcount.get("/profiletweetcount/:userId", async (req, res) => {
   try {
     const userId = req.params.userId; // Extracted from JWT token
@@ -57,6 +71,45 @@ tweetcount.get("/tweets", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+tweetcount.get("/tweets/searched/:username", async (req, res) => {
+  try {
+    const { username } = req.params;
+    console.log("🔍 Username from params:", username);
+
+    const tweets = await Tweets.find({ username }).sort({ createdAt: -1 }); // Optional: sort newest first
+    console.log("📦 Tweets found:", tweets.length);
+
+    if (!tweets || tweets.length === 0) {
+      return res.status(404).json({ message: "No tweets found for this user." });
+    }
+
+    res.json(tweets); // ✅ Send back the array of tweets
+  } catch (error) {
+    console.error("❌ Server error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+tweetcount.get("/posts/:id", async (req, res) => {
+  try {
+    const id = req.params.id; // Get the ID from the URL
+    const post = await Tweets.findById(id)
+
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    // res.json({
+    //   _id: post._id,
+    //   content: post.content,
+    //   username: post.user_id.username,
+    //   profileImage: post.user_id.profileImage,
+    // });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 tweetcount.get("/usertweets", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -68,5 +121,18 @@ tweetcount.get("/usertweets", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+tweetcount.get("/tweetData/:tweetId", authenticateToken, async (req, res) => {
+  try {
+    const {tweetId} = req.params;
+    const tweet = await Tweets.findOne({ _id:  tweetId  });
+    // console.log(user)
+    if (!tweet) return res.status(404).json({ message: "tweet not found" });
+    res.json(tweet);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 
 export default tweetcount;
