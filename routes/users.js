@@ -1,5 +1,6 @@
 import express from "express";
 import UserInfo from "../models/usersModel.js";
+import Tweets from "../models/tweetsModel.js"; // Assuming the Tweet model is in tweetModel.js
 import { connectDB } from "../lib/db.js";
 import authenticateToken from "./baseauth.js";
 import multer from "multer";
@@ -61,18 +62,30 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
     }
     if (mediaUrl) updateFields.profileImage = mediaUrl;
 
+    // Update the user profile
     const updatedProfile = await UserInfo.findByIdAndUpdate(
       userId,
       { $set: updateFields },
       { new: true }
     );
 
-    res.status(200).json({ message: "Profile updated successfully", profile: updatedProfile });
+    // After updating the profile, update all related tweets
+    await Tweets.updateMany(
+      { user_id: userId }, // Find all tweets by this user
+      { 
+        $set: { 
+          username: updatedProfile.username,
+          name: updatedProfile.Name,
+          profile_image: updatedProfile.profileImage
+        }
+      }
+    );
+
+    res.status(200).json({ message: "Profile and related tweets updated successfully", profile: updatedProfile });
   } catch (error) {
     console.error("Error updating profile:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export default UserCrud;
