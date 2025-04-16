@@ -30,18 +30,19 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
     if (!req.user || !req.user.userId) {
       return res.status(401).json({ message: "Unauthorized access" });
     }
-    console.log("Uploaded File:", req.file);
+
     const { username, Name, bio } = req.body;
     const userId = req.user.userId;
 
     let mediaUrl = null;
-    // if (req.file) {
+
+    if (req.file) {
       try {
         mediaUrl = await uploadToCloudinary(req.file.buffer);
       } catch (error) {
         return res.status(500).json({ message: "Error uploading media" });
       }
-    // }
+    }
 
     const existingProfile = await UserInfo.findById(userId);
     if (!existingProfile) {
@@ -51,7 +52,13 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
     const updateFields = {};
     if (username) updateFields.username = username;
     if (Name) updateFields.Name = Name;
-    if (bio) updateFields.bio = bio;
+    if (bio) {
+      try {
+        updateFields.bio = JSON.parse(bio);
+      } catch (err) {
+        return res.status(400).json({ message: "Bio must be a valid array" });
+      }
+    }
     if (mediaUrl) updateFields.profileImage = mediaUrl;
 
     const updatedProfile = await UserInfo.findByIdAndUpdate(
@@ -66,5 +73,6 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 export default UserCrud;
