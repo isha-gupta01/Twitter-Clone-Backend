@@ -96,7 +96,7 @@ tweetcount.get("/posts/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const post = await Tweets.findById(id).populate("user_id", "username profileImage","Name");
+    const post = await Tweets.findById(id).populate("user_id", "username profileImage Name");
 
     if (!post) return res.status(404).json({ message: "Post not found" });
 
