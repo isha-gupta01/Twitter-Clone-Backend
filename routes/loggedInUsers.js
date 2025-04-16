@@ -116,6 +116,40 @@ loggedUser.get("/profile/searched/:username", async (req, res) => {
 });
 
 
+loggedUser.put('/like/:userId', authenticateToken, async (req, res) => {
+  try {
+    const userIdTolike = req.params.userId;
+    const followerId = req.user.userId;
+
+    if (!followerId) {
+      return res.status(400).json({ message: "Follower ID is required" });
+    }
+
+    const userToFollow = await UserInfo.findById(userIdToFollow);
+    const followerUser = await UserInfo.findById(followerId);
+
+    if (!userToFollow || !followerUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (userToFollow.followers.includes(followerId)) {
+      return res.status(400).json({ message: "Already following this user" });
+    }
+
+    // Add follower to user's followers
+    userToFollow.followers.push(followerId);
+    await userToFollow.save();
+
+    // Add user to follower's following list
+    followerUser.following.push(userIdToFollow);
+    await followerUser.save();
+
+    res.status(200).json({ message: "Followed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 loggedUser.put('/follow/:userId', authenticateToken, async (req, res) => {
   try {
     const userIdToFollow = req.params.userId;
