@@ -20,12 +20,12 @@ tweetcount.get("/me", authenticateToken, async (req, res) => {
   }
 });
 // Get tweet count for searched user
-tweetcount.get("/count/searched/:username", async (req, res) => {
+tweetcount.get("/count/searched/:userId", async (req, res) => {
   try {
-    const {username} = req.params; // Extracted from JWT token
+    const {userId} = req.params; // Extracted from JWT token
     // console.log(userId)
     // Count tweets for the logged-in user
-    const tweetCount = await Tweets.countDocuments({ username });
+    const tweetCount = await Tweets.countDocuments({ user_id:userId });
     // console.log(tweetCount)
     res.json({username, totalTweets: tweetCount });
   } catch (error) {
