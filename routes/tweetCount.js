@@ -63,7 +63,7 @@ tweetcount.get("/profile/:userId", async (req, res) => {
 tweetcount.get("/tweets", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const user = await Tweets.find({ user_id: { $ne: userId } });
+    const user = await Tweets.find({ user_id: userId });
     // console.log(user)
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
