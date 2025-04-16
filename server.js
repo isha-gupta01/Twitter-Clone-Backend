@@ -39,37 +39,54 @@ io.on("connection", (socket) => {
 
     // ✅ Send existing comments when user joins a tweet's chat
     try {
-      const comments = await commentModel.find({ tweetId }).sort({ timestamp: -1 });
+      const comments = await commentModel
+        .find({ tweetId })
+        .sort({ timestamp: 1 }); // Sort from oldest → newest
+
       socket.emit("loadPreviousMessages", comments);
     } catch (error) {
       console.error("Error loading messages:", error);
     }
   });
 
-  socket.on("sendComment", async (commentData) => {
+  // ✅ Handle new comment sent from client
+  socket.on("sendComment", async (commentData, callback) => {
     try {
+      const { tweetId, userId, username, profileImage, content } = commentData;
+
+      if (!content || !tweetId || !userId) {
+        if (callback) callback({ success: false, error: "Missing required fields" });
+        return;
+      }
+
       const newComment = new commentModel({
-        tweetId: commentData.tweetId,
-        userId: commentData.userId,
-        username: commentData.username,
-        profileImage: commentData.profileImage,
-        content: commentData.content,
+        tweetId,
+        userId,
+        username,
+        profileImage,
+        content: content.trim(),
         timestamp: new Date(),
       });
 
-      await newComment.save(); // ✅ Save to MongoDB
+      const savedComment = await newComment.save();
 
-      // ✅ Broadcast the saved comment to all users in the room
-      io.to(commentData.tweetId).emit("receiveComment", newComment);
+      // ✅ Emit saved comment to all clients in the same room
+      io.to(tweetId).emit("receiveComment", savedComment);
+
+      // ✅ Acknowledge to sender that comment was saved
+      if (callback) callback({ success: true });
     } catch (error) {
       console.error("Error saving comment:", error);
+      if (callback) callback({ success: false, error: error.message });
     }
   });
 
+  // ✅ Handle disconnection
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
 });
+
 
 
 // 🛠️ Middleware
