@@ -108,19 +108,13 @@ tweetcount.get("/posts/:id", async (req, res) => {
 
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    res.json({
-      _id: post._id,
-      content: post.content,
-      username: post.user_id.username,
-      profileImage: post.user_id.profileImage,
-      image:post.image,
-    });
+    res.json(post);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-
+ 
 
 tweetcount.get("/usertweets", authenticateToken, async (req, res) => {
   try {
