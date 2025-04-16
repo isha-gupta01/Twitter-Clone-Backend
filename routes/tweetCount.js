@@ -72,12 +72,12 @@ tweetcount.get("/tweets", authenticateToken, async (req, res) => {
   }
 });
 
-tweetcount.get("/tweets/searched/:username", async (req, res) => {
+tweetcount.get("/tweets/searched/:userId", async (req, res) => {
   try {
-    const { username } = req.params;
-    console.log("🔍 Username from params:", username);
+    const { userId } = req.params;
+    console.log("🔍 Username from params:", userId);
 
-    const tweets = await Tweets.find({ username }).sort({ createdAt: -1 }); // Optional: sort newest first
+    const tweets = await Tweets.find({user_id: userId }).sort({ createdAt: -1 }); // Optional: sort newest first
     console.log("📦 Tweets found:", tweets.length);
 
     if (!tweets || tweets.length === 0) {
