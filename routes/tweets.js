@@ -55,7 +55,7 @@ const uploadToCloudinary = async (buffer, mimetype) => {
 // ✅ GET all tweets
 TweetCrud.get("/tweetall", async (req, res) => {
     try {
-        const tweets = await Tweets.find({});
+        const tweets = await Tweets.find({})
         res.json(tweets);
     } catch (error) {
         res.status(500).json({ error: "Error fetching tweets" });

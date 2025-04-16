@@ -61,14 +61,22 @@ tweetcount.get("/profile/:userId", async (req, res) => {
 });
 
 tweetcount.get("/tweets", authenticateToken, async (req, res) => {
+  const { userId } = req.user;
+
   try {
-    const userId = req.user.userId;
-    const user = await Tweets.find({ user_id: userId });
-    // console.log(user)
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    const ownTweets = await Tweets.find({ user_id: userId });
+    const othersTweets = await Tweets.find({ user_id: { $ne: userId } });
+
+    ownTweets.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    othersTweets.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const finalFeed = [...ownTweets, ...othersTweets];
+    finalFeed.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); 
+
+    res.json(finalFeed);
+  } catch (err) {
+    console.error("Feed fetch error:", err);
+    res.status(500).json({ error: "Server error" }); 
   }
 });
 
