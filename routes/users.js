@@ -75,8 +75,8 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
       { 
         $set: { 
           username: updatedProfile.username,
-          name: updatedProfile.Name,
-          profile_image: updatedProfile.profileImage
+          Name: updatedProfile.Name,
+          profileImage: updatedProfile.profileImage
         }
       }
     );
