@@ -40,6 +40,7 @@ router.post("/login", async (req, res) => {
           username: user.username,
           Name: user.Name,
           profileImage: user.profileImage,
+          bio:user.bio
         },
       });
   } catch (error) {

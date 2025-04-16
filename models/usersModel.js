@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     Name: { type: String },
     bio: [{ type: String }],
-    profileImage: { type: String, default: "/default-profile.png" },
+    profileImage: { type: String, default: "/person2.png" },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserInfo" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserInfo" }],
   },
