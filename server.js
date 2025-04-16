@@ -60,9 +60,7 @@ io.on("connection", (socket) => {
       await newComment.save(); // ✅ Save to MongoDB
 
       // ✅ Broadcast the saved comment to all users in the room
-      // io.to(commentData.tweetId).emit("receiveComment", newComment);
-      // ✅ Emit the new comment to the chatroom
-      io.to(tweetId).emit("receiveComment", newComment);
+      io.to(commentData.tweetId).emit("receiveComment", newComment);
     } catch (error) {
       console.error("Error saving comment:", error);
     }
