@@ -5,9 +5,9 @@ import authenticateToken from "./baseauth.js"; // Middleware to verify JWT
 const CommentChat = express.Router();
 
 // ✅ **POST - Add a Comment to a Tweet**
-CommentChat.post("/add", async (req, res) => {
+CommentChat.post("/add", authenticateToken, async (req, res) => {
   try {
-    const { tweetId, content,userId,username,profileImage } = req.body;
+    const { tweetId, content } = req.body;
     const user = req.user; // Get user from token
 
     if (!tweetId || !content) {
@@ -16,9 +16,9 @@ CommentChat.post("/add", async (req, res) => {
 
     const newComment = await commentModel.create({
       tweetId,
-      userId,
-      username, // Extracted from JWT
-      profileImage,
+      userId: user.userId,
+      username: user.username, // Extracted from JWT
+      profileImage: user.profileImage,
       content,
       timestamp: Date.now(), // Add timestamp to the comment
     });
