@@ -5,7 +5,7 @@ import authenticateToken from "./baseauth.js"; // Middleware to verify JWT
 const CommentChat = express.Router();
 
 // ✅ **POST - Add a Comment to a Tweet**
-CommentChat.post("/add", authenticateToken, async (req, res) => {
+CommentChat.post("/add", async (req, res) => {
   try {
     const { tweetId, content,userId,username,profileImage } = req.body;
     const user = req.user; // Get user from token
