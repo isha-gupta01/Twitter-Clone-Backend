@@ -44,6 +44,17 @@ CommentChat.get("/:tweetId", async (req, res) => {
 });
 
 
+CommentChat.get("/commentcount/:tweetId",async(req,res)=>{
+  try {
+    const {tweetId} = req.params;
+    const comments = await commentModel.countDocuments({tweetId});
+    res.json({tweetId,commentCount:comments});
+  } catch (error) {
+    console.error("Error fetching comments counts:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+})
+
 // ✅ **DELETE - Remove a Comment (Only Author Can Delete)**
 CommentChat.delete("/delete/:commentId", authenticateToken, async (req, res) => {
   try {
