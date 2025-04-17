@@ -7,7 +7,7 @@ const CommentChat = express.Router();
 // ✅ **POST - Add a Comment to a Tweet**
 CommentChat.post("/add", authenticateToken, async (req, res) => {
   try {
-    const { tweetId, content } = req.body;
+    const { tweetId, content,userId,username,profileImage } = req.body;
     const user = req.user; // Get user from token
 
     if (!tweetId || !content) {
@@ -16,9 +16,9 @@ CommentChat.post("/add", authenticateToken, async (req, res) => {
 
     const newComment = await commentModel.create({
       tweetId,
-      userId: user.userId,
-      username: user.username, // Extracted from JWT
-      profileImage: user.profileImage,
+      userId,
+      username, // Extracted from JWT
+      profileImage,
       content,
       timestamp: Date.now(), // Add timestamp to the comment
     });
@@ -42,6 +42,8 @@ CommentChat.get("/:tweetId", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+
 
 // ✅ **DELETE - Remove a Comment (Only Author Can Delete)**
 CommentChat.delete("/delete/:commentId", authenticateToken, async (req, res) => {
