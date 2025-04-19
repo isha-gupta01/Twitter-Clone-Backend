@@ -27,7 +27,7 @@ const app = express();
 const server = http.createServer(app); // Create HTTP server
 
 // 🛠️ WebSocket Setup
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: ["https://twitter-clone-tweets.vercel.app","http://localhost:4000"] } });
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error("Error loading messages:", error);
     }
-  });
+  }); 
 
   // ✅ Handle new comment sent from client
   socket.on("sendComment", async (commentData, callback) => {

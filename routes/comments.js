@@ -35,7 +35,7 @@ CommentChat.get("/:tweetId", async (req, res) => {
   try {
     const { tweetId } = req.params;
 
-    const comments = await commentModel.find({ tweetId }).sort({ timestamp: -1 }); // Sort comments by timestamp (latest first)
+    const comments = await commentModel.find({ tweetId }).sort({ timestamp: 1 }); // Sort comments by timestamp (latest first)
     res.status(200).json(comments);
   } catch (error) {
     console.error("Error fetching comments:", error);
