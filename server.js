@@ -19,6 +19,7 @@ import { Server } from "socket.io";
 import http from "http";
 import CommentChat from "./routes/comments.js";
 import SearchRouter from "./routes/searchUser.js";
+import passwordRouter from "./routes/password.js";
 
 dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -115,7 +116,8 @@ app.use("/tweetfetch", tweetcount);
 app.use("/tweetcrud", TweetCrud);
 app.use("/usercrud", UserCrud);
 app.use("/comment", CommentChat);
-app.use("/api/users",SearchRouter)
+app.use("/api/users",SearchRouter);
+app.use("/api/password",passwordRouter);
 
 // ==================== Fetch Users Data ====================
 app.get("/users", async (req, res) => {
