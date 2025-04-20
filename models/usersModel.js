@@ -15,4 +15,4 @@ const UserSchema = new mongoose.Schema({
   { timestamps: true }
 )
 UserSchema.plugin(passportLocalMongoose);
-export default mongoose.models.UserInfo || mongoose.model("UserInfo",UserSchema,"userinfos")
+export default mongoose.models.UserInfo || mongoose.model("UserInfo",UserSchema,"userinfos") 

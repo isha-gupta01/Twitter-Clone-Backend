@@ -28,7 +28,12 @@ const app = express();
 const server = http.createServer(app); // Create HTTP server
 
 // 🛠️ WebSocket Setup
-const io = new Server(server, { cors: { origin: ["https://twitter-clone-tweets.vercel.app","http://localhost:3000"] } });
+const io = new Server(server, {
+  cors: {
+    origin: ["https://twitter-clone-tweets.vercel.app", "http://localhost:3000"],
+    credentials: true,
+  },
+});
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -48,7 +53,7 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error("Error loading messages:", error);
     }
-  }); 
+  });
 
   // ✅ Handle new comment sent from client
   socket.on("sendComment", async (commentData, callback) => {
@@ -88,14 +93,14 @@ io.on("connection", (socket) => {
   });
 });
 
-
-
 // 🛠️ Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// CORS Configuration
 const allowedOrigins = [
   "https://twitter-clone-tweets.vercel.app", // deployed frontend
-  "http://localhost:3000" // local dev
+  "http://localhost:3000", // local dev
 ];
 
 app.use(cors({
@@ -109,15 +114,11 @@ app.use(cors({
   credentials: true
 }));
 
-
-
-// 🛠️ CORS Headers (if needed)
-// app.use((req, res, next) => {
-//   res.setHeader("Access-Control-Allow-Origin", "*");
-//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-//   next();
-// });
+// Optional preflight for all routes
+app.options("*", cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
 // 🛠️ Static File Serving
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -131,8 +132,8 @@ app.use("/tweetfetch", tweetcount);
 app.use("/tweetcrud", TweetCrud);
 app.use("/usercrud", UserCrud);
 app.use("/comment", CommentChat);
-app.use("/api/users",SearchRouter);
-app.use("/api/password",passwordRouter);
+app.use("/api/users", SearchRouter);
+app.use("/api/password", passwordRouter);
 
 // ==================== Fetch Users Data ====================
 app.get("/users", async (req, res) => {
