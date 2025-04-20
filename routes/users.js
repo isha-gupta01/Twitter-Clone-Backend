@@ -1,18 +1,26 @@
 import express from "express";
+import multerPkg from "multer";
 import UserInfo from "../models/usersModel.js";
-import Tweets from "../models/tweetsModel.js"; // Assuming the Tweet model is in tweetModel.js
+import Tweets from "../models/tweetsModel.js";
 import { connectDB } from "../lib/db.js";
 import authenticateToken from "./baseauth.js";
-import multer from "multer";
 import cloudinary from "../lib/cloudinary.js";
 
 const UserCrud = express.Router();
 connectDB();
 
-// Multer setup for handling file uploads in memory
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// Setup multer with memoryStorage
+const { memoryStorage } = multerPkg;
+const storage = memoryStorage();
+const upload = multerPkg({ storage });
 
+// Upload two fields: profileImage and coverImage
+const multiUpload = upload.fields([
+  { name: "profileImage", maxCount: 1 },
+  { name: "coverImage", maxCount: 1 },
+]);
+
+// Upload to Cloudinary from buffer
 const uploadToCloudinary = async (buffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -26,7 +34,7 @@ const uploadToCloudinary = async (buffer) => {
   });
 };
 
-UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async (req, res) => {
+UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) => {
   try {
     if (!req.user || !req.user.userId) {
       return res.status(401).json({ message: "Unauthorized access" });
@@ -35,13 +43,25 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
     const { username, Name, bio } = req.body;
     const userId = req.user.userId;
 
-    let mediaUrl = null;
+    const files = req.files || {};
+    let profileImageUrl = null;
+    let coverImageUrl = null;
 
-    if (req.file) {
+    // Upload profileImage
+    if (files.profileImage && files.profileImage[0]) {
       try {
-        mediaUrl = await uploadToCloudinary(req.file.buffer);
+        profileImageUrl = await uploadToCloudinary(files.profileImage[0].buffer);
       } catch (error) {
-        return res.status(500).json({ message: "Error uploading media" });
+        return res.status(500).json({ message: "Error uploading profile image" });
+      }
+    }
+
+    // Upload coverImage
+    if (files.coverImage && files.coverImage[0]) {
+      try {
+        coverImageUrl = await uploadToCloudinary(files.coverImage[0].buffer);
+      } catch (error) {
+        return res.status(500).json({ message: "Error uploading cover image" });
       }
     }
 
@@ -60,28 +80,32 @@ UserCrud.post("/setupprofile", authenticateToken, upload.single("media"), async 
         return res.status(400).json({ message: "Bio must be a valid array" });
       }
     }
-    if (mediaUrl) updateFields.profileImage = mediaUrl;
+    if (profileImageUrl) updateFields.profileImage = profileImageUrl;
+    if (coverImageUrl) updateFields.coverImage = coverImageUrl;
 
-    // Update the user profile
     const updatedProfile = await UserInfo.findByIdAndUpdate(
       userId,
       { $set: updateFields },
       { new: true }
     );
 
-    // After updating the profile, update all related tweets
+    // Update tweets with new profile info
     await Tweets.updateMany(
-      { user_id: userId }, // Find all tweets by this user
-      { 
-        $set: { 
+      { user_id: userId },
+      {
+        $set: {
           username: updatedProfile.username,
           Name: updatedProfile.Name,
-          profileImage: updatedProfile.profileImage
-        }
+          profileImage: updatedProfile.profileImage,
+        },
       }
     );
 
-    res.status(200).json({ message: "Profile and related tweets updated successfully", profile: updatedProfile });
+    res.status(200).json({
+      message: "Profile and related tweets updated successfully",
+      profile: updatedProfile,
+    });
+
   } catch (error) {
     console.error("Error updating profile:", error);
     res.status(500).json({ message: "Server error" });
