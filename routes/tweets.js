@@ -231,40 +231,30 @@ TweetCrud.delete("/tweetdelete/:id", authenticateToken, async (req, res) => {
 function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString(); // keeps it as "360" for small numbers
+    return num.toString(); // keeps "360" for small numbers
 }
 
 TweetCrud.put('/fix-formatted-tweets', async (req, res) => {
     try {
-        const tweets = await Tweets.find({
-            $or: [
-                { retweets: { $type: 'number' } },
-                { views: { $type: 'number' } }
-            ]
-        });
-
-        console.log('Tweets found:', tweets); // Debugging line
+        const tweets = await Tweets.find();
 
         let updatedCount = 0;
 
         for (let tweet of tweets) {
-            let updated = false;
+            let viewsNum = Math.floor(Math.random() * 1000000); // Simulated number
+            let retweetsNum = Math.floor(Math.random() * 100000); // Simulated number
 
-            if (typeof tweet.views === 'number') {
-                console.log(`Formatting views: ${tweet.views}`); // Debugging line
-                tweet.views = formatNumber(tweet.views);
-                updated = true;
-            }
+            tweet.views = formatNumber(viewsNum);
+            tweet.retweets = formatNumber(retweetsNum);
 
-            if (typeof tweet.retweets === 'number') {
-                console.log(`Formatting retweets: ${tweet.retweets}`); // Debugging line
-                tweet.retweets = formatNumber(tweet.retweets);
-                updated = true;
-            }
+            tweet.markModified('views');
+            tweet.markModified('retweets');
 
-            if (updated) {
+            try {
                 await tweet.save();
                 updatedCount++;
+            } catch (err) {
+                console.error(`Error saving tweet ${tweet._id}:`, err.message);
             }
         }
 
@@ -274,6 +264,34 @@ TweetCrud.put('/fix-formatted-tweets', async (req, res) => {
         res.status(500).json({ error: 'Server error while formatting tweets' });
     }
 });
+
+
+TweetCrud.put('/delete-views-retweets', async (req, res) => {
+    try {
+        const result = await Tweets.updateMany(
+            {
+                $or: [
+                    { views: { $exists: true } },
+                    { retweets: { $exists: true } }
+                ]
+            },
+            {
+                $unset: {
+                    views: "",
+                    retweets: ""
+                }
+            }
+        );
+
+        res.status(200).json({
+            message: `✅ Deleted views and retweets from ${result.modifiedCount} tweets.`,
+        });
+    } catch (error) {
+        console.error("Error deleting fields:", error);
+        res.status(500).json({ error: "Server error while deleting fields" });
+    }
+});
+
 
 
 
