@@ -10,7 +10,7 @@ const userTweets = new mongoose.Schema({
     likes:Number,
     comments:Number,
     retweets:Number,
-    views:String,
+    views:Number,
     tweetTime:String,
     likedBy: { type: [mongoose.Schema.Types.ObjectId], ref: "UserInfo",default:[] }, 
     created_at: { type: Date, default: Date.now }

@@ -78,51 +78,51 @@ TweetCrud.post("/tweetinsert", async (req, res) => {
     }
 });
 
- 
+
 //inserting the tweet or post from the Twitter page by user
 TweetCrud.post("/loggedtweet", authenticateToken, upload.single("media"), async (req, res) => {
     try {
-      const { tweetContent, username, Name, profileImage } = req.body;
-      const userId = req.user.userId; // Extract user ID from token
-      console.log("Received file:", req.file); // Debugging step
-  
-      let mediaUrl = null;
-  
-      // Upload either an image or a video
-      if (req.file) {
-        console.log("File type:", req.file.mimetype);
-        mediaUrl = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
-      }
-  
-      // Ensure there's either text content or media
-      if (!tweetContent && !mediaUrl) {
-        return res.status(400).json({ message: "Tweet content or media is required" });
-      }
-  
-      // Create and save the new tweet
-      const newTweet = new Tweets({
-        user_id: userId,
-        username,
-        Name,
-        profileImage,
-        content: tweetContent,
-        image: mediaUrl, // Store single media URL
-        likes: 0,
-        retweets: 0,
-        comments: 0,
-        tweetTime: "1m",
-        views: "0",
-      });
-  
-      await newTweet.save();
-      console.log("Submitting tweet with:", tweetContent, mediaUrl);
-      res.status(201).json({ message: "Tweet created successfully", tweet: newTweet });
+        const { tweetContent, username, Name, profileImage } = req.body;
+        const userId = req.user.userId; // Extract user ID from token
+        console.log("Received file:", req.file); // Debugging step
+
+        let mediaUrl = null;
+
+        // Upload either an image or a video
+        if (req.file) {
+            console.log("File type:", req.file.mimetype);
+            mediaUrl = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
+        }
+
+        // Ensure there's either text content or media
+        if (!tweetContent && !mediaUrl) {
+            return res.status(400).json({ message: "Tweet content or media is required" });
+        }
+
+        // Create and save the new tweet
+        const newTweet = new Tweets({
+            user_id: userId,
+            username,
+            Name,
+            profileImage,
+            content: tweetContent,
+            image: mediaUrl, // Store single media URL
+            likes: 0,
+            views: Math.floor(Math.random() * 5000),
+            retweets: Math.floor(Math.random() * 0.2 * views), // 0–20% of views
+            comments: 0,
+            tweetTime: "1m",
+        });
+
+        await newTweet.save();
+        console.log("Submitting tweet with:", tweetContent, mediaUrl);
+        res.status(201).json({ message: "Tweet created successfully", tweet: newTweet });
     } catch (error) {
-      console.error("Error creating tweet:", error);
-      res.status(500).json({ message: "Server error" });
+        console.error("Error creating tweet:", error);
+        res.status(500).json({ message: "Server error" });
     }
-  });
-  
+});
+
 
 TweetCrud.get("/tweet/:tweetId", authenticateToken, async (req, res) => {
     try {
@@ -214,7 +214,7 @@ TweetCrud.put("/tweetupdate", async (req, res) => {
 // ✅ DELETE a tweet
 TweetCrud.delete("/tweetdelete/:id", authenticateToken, async (req, res) => {
     try {
-        const tweet = await Tweets.findByIdAndDelete({_id:req.params.id});
+        const tweet = await Tweets.findByIdAndDelete({ _id: req.params.id });
         if (!tweet) return res.status(404).json({ message: "Tweet not found" });
 
         res.status(200).json({ message: "Tweet deleted successfully" });
@@ -223,5 +223,5 @@ TweetCrud.delete("/tweetdelete/:id", authenticateToken, async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
- 
+
 export default TweetCrud;
