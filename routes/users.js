@@ -87,15 +87,11 @@ UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) 
     if (Name) updateFields.Name = Name;
 
     if (bio) {
-      try {
-        const parsedBio = JSON.parse(bio);
-        if (!Array.isArray(parsedBio)) {
-          return res.status(400).json({ message: "Bio must be an array." });
-        }
-        updateFields.bio = parsedBio;
-      } catch (err) {
-        return res.status(400).json({ message: "Bio must be a valid array." });
-      }
+      const bioArray = bio
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+      updateFields.bio = bioArray;
     }
 
     if (profileImageUrl) updateFields.profileImage = profileImageUrl;
