@@ -100,6 +100,9 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // CORS Configuration
 const allowedOrigins = [
   "https://twitter-clone-tweets.vercel.app", // deployed frontend
+  "https://twitter-clone-isha-guptas-projects-95d81fc9.vercel.app/",
+  "https://twitter-clone-git-main-isha-guptas-projects-95d81fc9.vercel.app/",
+  "https://twitter-clone-rouge-five.vercel.app/",
   "http://localhost:3000", // local dev
 ];
 
