@@ -9,24 +9,24 @@ import cloudinary from "../lib/cloudinary.js";
 const UserCrud = express.Router();
 connectDB();
 
-// Setup multer with memoryStorage
 const { memoryStorage } = multerPkg;
 const storage = memoryStorage();
 const upload = multerPkg({ storage });
 
-// Upload two fields: profileImage and coverImage
 const multiUpload = upload.fields([
   { name: "profileImage", maxCount: 1 },
   { name: "coverImage", maxCount: 1 },
 ]);
 
-// Upload to Cloudinary from buffer
 const uploadToCloudinary = async (buffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder: "uploads" },
       (error, result) => {
-        if (error) return reject(error);
+        if (error) {
+          console.error("Cloudinary error:", error);
+          return reject(error);
+        }
         resolve(result.secure_url);
       }
     );
@@ -52,12 +52,15 @@ UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) 
       try {
         profileImageUrl = await uploadToCloudinary(files.profileImage[0].buffer);
       } catch (error) {
-        return res.status(500).json({ message: "Error uploading profile image" });
-      }
+        return res.status(500).json({
+          message: "Error uploading profile image",
+          error: error.message || error.toString(),
+        });
+              }
     }
 
     // Upload coverImage
-    if (files.coverImage && files.coverImage[0]) {
+    if (files.coverImage && files.coverImage[0]) { 
       try {
         coverImageUrl = await uploadToCloudinary(files.coverImage[0].buffer);
       } catch (error) {
@@ -71,15 +74,30 @@ UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) 
     }
 
     const updateFields = {};
-    if (username) updateFields.username = username;
+
+    // Check for unique username
+    if (username && username !== existingProfile.username) {
+      const existingUser = await UserInfo.findOne({ username });
+      if (existingUser && existingUser._id.toString() !== userId) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+      updateFields.username = username;
+    }
+
     if (Name) updateFields.Name = Name;
+
     if (bio) {
       try {
-        updateFields.bio = JSON.parse(bio);
+        const parsedBio = JSON.parse(bio);
+        if (!Array.isArray(parsedBio)) {
+          return res.status(400).json({ message: "Bio must be an array." });
+        }
+        updateFields.bio = parsedBio;
       } catch (err) {
-        return res.status(400).json({ message: "Bio must be a valid array" });
+        return res.status(400).json({ message: "Bio must be a valid array." });
       }
     }
+
     if (profileImageUrl) updateFields.profileImage = profileImageUrl;
     if (coverImageUrl) updateFields.coverImage = coverImageUrl;
 
