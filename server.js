@@ -20,6 +20,7 @@ import http from "http";
 import CommentChat from "./routes/comments.js";
 import SearchRouter from "./routes/searchUser.js";
 import passwordRouter from "./routes/password.js";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +31,7 @@ const server = http.createServer(app); // Create HTTP server
 // 🛠️ WebSocket Setup
 const io = new Server(server, {
   cors: {
-    origin: ["https://twitter-clone-tweets.vercel.app", "http://localhost:3000"],
+    origin: ["https://twitter-clone-tweets.vercel.app", "http://localhost:3001"],
     credentials: true,
   },
 });
@@ -97,13 +98,26 @@ io.on("connection", (socket) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// 🛠️ Rate Limiting Middleware
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
 // CORS Configuration
 const allowedOrigins = [
   "https://twitter-clone-tweets.vercel.app", // deployed frontend
   "https://twitter-clone-isha-guptas-projects-95d81fc9.vercel.app",
   "https://twitter-clone-git-main-isha-guptas-projects-95d81fc9.vercel.app",
   "https://twitter-clone-rouge-five.vercel.app",
-  "http://localhost:3000", // local dev
+  "http://localhost:3000",
+  "http://localhost:3001" // local dev
 ];
 
 app.use(cors({
