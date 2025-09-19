@@ -80,6 +80,7 @@ tweetcount.get("/tweets", authenticateToken, async (req, res) => {
   }
 });
 
+//search user tweet data
 tweetcount.get("/tweets/searched/:userId", async (req, res) => {
   try {
     const { userId } = req.params;

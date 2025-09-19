@@ -99,16 +99,16 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // // 🛠️ Rate Limiting Middleware
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 100000, // 15 minutes
-//   max: 1000000, // limit each IP to 100 requests per windowMs
-//   message: 'Too many requests from this IP, please try again later.',
-//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-// });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 100000, // 15 minutes
+  max: 1000000, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 // // Apply rate limiting to all routes
-// app.use(limiter);
+app.use(limiter);
 
 // CORS Configuration
 const allowedOrigins = [
@@ -171,39 +171,6 @@ app.get("/tweets", async (req, res) => {
   } catch (error) {
     console.error("Error fetching tweets:", error);
     res.status(500).json({ error: "Server error" });
-  }
-});
-
-// ==================== Register User ====================
-app.post("/register", async (req, res) => {
-  try {
-    const { email, password, username } = req.body;
-
-    // Check if user already exists
-    const existingUser = await UserInfo.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: "User already exists" });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const newUser = new UserInfo({ email, password: hashedPassword, username });
-    await newUser.save();
-
-    // Generate JWT Token
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-    console.log("User Registered:", newUser._id);
-    return res.status(201).json({
-      message: "User registered successfully",
-      token,
-      user: { email: newUser.email, username: newUser.username },
-    });
-  } catch (error) {
-    console.error("Server Error:", error);
-    return res.status(500).json({ error: "Server error" });
   }
 });
 

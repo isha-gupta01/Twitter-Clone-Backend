@@ -48,4 +48,37 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/register", async (req, res) => {
+  try {
+    const { email, password, username } = req.body;
+
+    // Check if user already exists
+    const existingUser = await UserInfo.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new UserInfo({ email, password: hashedPassword, username });
+    await newUser.save();
+
+    // Generate JWT Token
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    console.log("User Registered:", newUser._id);
+    return res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: { email: newUser.email, username: newUser.username },
+    });
+  } catch (error) {
+    console.error("Server Error:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 export default router;
