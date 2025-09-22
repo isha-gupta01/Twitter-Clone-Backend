@@ -17,7 +17,7 @@ CommentChat.post("/add", authenticateToken, async (req, res) => {
     const newComment = await commentModel.create({
       tweetId,
       userId,
-      username,// Extracted from JWT
+      username,
       profileImage,
       content,
       timestamp: Date.now(), // Add timestamp to the comment

@@ -1,38 +1,15 @@
 import express from "express";
-import multerPkg from "multer";
 import UserInfo from "../models/usersModel.js";
 import Tweets from "../models/tweetsModel.js";
 import { connectDB } from "../lib/db.js";
 import authenticateToken from "./baseauth.js";
-import cloudinary from "../lib/cloudinary.js";
+import uploadToCloudinary,{multiUpload} from "../storage/cloudinaryMulter.js";
+
 
 const UserCrud = express.Router();
 connectDB();
 
-const { memoryStorage } = multerPkg;
-const storage = memoryStorage();
-const upload = multerPkg({ storage });
 
-const multiUpload = upload.fields([
-  { name: "profileImage", maxCount: 1 },
-  { name: "coverImage", maxCount: 1 },
-]);
-
-const uploadToCloudinary = async (buffer) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: "uploads" },
-      (error, result) => {
-        if (error) {
-          console.error("Cloudinary error:", error);
-          return reject(error);
-        }
-        resolve(result.secure_url);
-      }
-    );
-    stream.end(buffer);
-  });
-};
 
 UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) => {
   try {
@@ -47,22 +24,28 @@ UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) 
     let profileImageUrl = null;
     let coverImageUrl = null;
 
-    // Upload profileImage
+    // Upload profileImage with deduplication
     if (files.profileImage && files.profileImage[0]) {
       try {
-        profileImageUrl = await uploadToCloudinary(files.profileImage[0].buffer);
+        profileImageUrl = await uploadToCloudinary(
+          files.profileImage[0].buffer,
+          "profile"
+        );
       } catch (error) {
         return res.status(500).json({
           message: "Error uploading profile image",
           error: error.message || error.toString(),
         });
-              }
+      }
     }
 
-    // Upload coverImage
-    if (files.coverImage && files.coverImage[0]) { 
+    // Upload coverImage with deduplication
+    if (files.coverImage && files.coverImage[0]) {
       try {
-        coverImageUrl = await uploadToCloudinary(files.coverImage[0].buffer);
+        coverImageUrl = await uploadToCloudinary(
+          files.coverImage[0].buffer,
+          "cover"
+        );
       } catch (error) {
         return res.status(500).json({ message: "Error uploading cover image" });
       }
@@ -119,7 +102,6 @@ UserCrud.post("/setupprofile", authenticateToken, multiUpload, async (req, res) 
       message: "Profile and related tweets updated successfully",
       profile: updatedProfile,
     });
-
   } catch (error) {
     console.error("Error updating profile:", error);
     res.status(500).json({ message: "Server error" });

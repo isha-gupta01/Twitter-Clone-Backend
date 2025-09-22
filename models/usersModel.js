@@ -15,6 +15,7 @@ const UserSchema = new mongoose.Schema({
     coverImage: { type: String, default: "/coverImage.png" },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserInfo" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserInfo" }],
+    savedTweet:[{type:mongoose.Schema.Types.ObjectId,ref:"Tweets"}],
   },
   { timestamps: true }
 )
